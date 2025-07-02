@@ -76,75 +76,81 @@ class _HabitListPageState extends State<HabitListPage> {
     });
   }
 
-  Widget _buildHabitsPage() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  decoration: const InputDecoration(
-                    labelText: 'Nouvelle habitude',
-                  ),
-                  onSubmitted: (_) => _addHabit(),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: _addHabit,
-                tooltip: 'Ajouter',
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: habits.isEmpty
-              ? const Center(child: Text('Aucune habitude ajoutée.'))
-              : ListView.builder(
-                  itemCount: habits.length,
-                  itemBuilder: (context, index) =>
-                      _buildHabitTile(habits[index]),
-                ),
-        ),
-      ],
-    );
-  }
+  final List<Widget> _pages = [
+    const Placeholder(), // index 0 → remplacé par le contenu principal
+    const StatsPage(), // index 1
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> pages = [
-      _buildHabitsPage(),
-      const StatsPage(),
-      const Center(child: Text('Paramètres (à venir)')),
-    ];
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Suivi d’habitudes'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.brightness_6),
-            tooltip: 'Changer le thème',
-            onPressed: () => themeController.toggleTheme(),
-          ),
-        ],
-      ),
-      body: pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Habitudes'),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Stats'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Paramètres',
-          ),
-        ],
-      ),
-    );
+    // Si on est sur la première page, on montre la liste des habitudes
+    if (_selectedIndex == 0) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Suivi d’habitudes'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.brightness_6),
+              tooltip: 'Changer thème',
+              onPressed: () => themeController.toggleTheme(),
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      decoration: const InputDecoration(
+                        labelText: 'Nouvelle habitude',
+                      ),
+                      onSubmitted: (_) => _addHabit(),
+                    ),
+                  ),
+                  IconButton(icon: const Icon(Icons.add), onPressed: _addHabit),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: habits.length,
+                itemBuilder: (context, index) => _buildHabitTile(habits[index]),
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Habitudes'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.bar_chart),
+              label: 'Stats',
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Si on est sur une autre page
+      return Scaffold(
+        body: _pages[_selectedIndex],
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Habitudes'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.bar_chart),
+              label: 'Stats',
+            ),
+          ],
+        ),
+      );
+    }
   }
 }
