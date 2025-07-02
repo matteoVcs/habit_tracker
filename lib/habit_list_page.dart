@@ -90,9 +90,9 @@ class _HabitListPageState extends State<HabitListPage> {
             icon: const Icon(Icons.bar_chart),
             tooltip: 'Statistiques',
             onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const StatsPage()));
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const StatsPage()),
+              );
             },
           ),
         ],
@@ -106,22 +106,25 @@ class _HabitListPageState extends State<HabitListPage> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration: const InputDecoration(
-                      labelText: 'Nouvelle habitude',
-                    ),
+                    decoration:
+                        const InputDecoration(labelText: 'Nouvelle habitude'),
                     onSubmitted: (_) => _addHabit(),
                   ),
                 ),
-                IconButton(icon: const Icon(Icons.add), onPressed: _addHabit),
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: _addHabit,
+                )
               ],
             ),
           ),
           Expanded(
             child: ListView.builder(
               itemCount: habits.length,
-              itemBuilder: (context, index) => _buildHabitTile(habits[index]),
+              itemBuilder: (context, index) =>
+                  _buildHabitTile(habits[index]),
             ),
-          ),
+          )
         ],
       ),
     );

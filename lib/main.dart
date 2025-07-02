@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'habit_list_page.dart';
 import 'theme_controller.dart';
+import 'login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
+
   runApp(
     ValueListenableBuilder<ThemeMode>(
       valueListenable: themeController,
@@ -32,7 +33,7 @@ class HabitTrackerApp extends StatelessWidget {
         brightness: Brightness.dark,
         primarySwatch: Colors.indigo,
       ),
-      home: const HabitListPage(),
+      home: const LoginPage(),
     );
   }
 }

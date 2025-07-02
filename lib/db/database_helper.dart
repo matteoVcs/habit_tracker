@@ -1,6 +1,8 @@
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -23,11 +25,20 @@ class DatabaseHelper {
       version: 1,
       onCreate: (db, version) async {
         await db.execute('''
+          CREATE TABLE users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
+          );
+        ''');
+
+        await db.execute('''
           CREATE TABLE habits (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL
           );
         ''');
+
         await db.execute('''
           CREATE TABLE habit_checks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,6 +50,43 @@ class DatabaseHelper {
       },
     ));
   }
+
+  // --------- Utilisateurs (auth) ---------
+
+  String _hashPassword(String password) {
+    final bytes = utf8.encode(password);
+    return sha256.convert(bytes).toString();
+  }
+
+  Future<int?> registerUser(String email, String password) async {
+    final db = await database;
+    try {
+      return await db.insert('users', {
+        'email': email,
+        'password': _hashPassword(password),
+      });
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> loginUser(String email, String password) async {
+    final db = await database;
+    final hashed = _hashPassword(password);
+    final users = await db.query('users',
+        where: 'email = ? AND password = ?', whereArgs: [email, hashed]);
+    if (users.isNotEmpty) return users.first;
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getUserByEmail(String email) async {
+    final db = await database;
+    final users = await db.query('users', where: 'email = ?', whereArgs: [email]);
+    if (users.isNotEmpty) return users.first;
+    return null;
+  }
+
+  // --------- Habitudes ---------
 
   Future<List<Map<String, dynamic>>> getHabits() async {
     final db = await database;
@@ -90,6 +138,5 @@ class DatabaseHelper {
       DateFormat('yyyy-MM-dd').format(now)
     ]);
     return result.first['count'] as int? ?? 0;
-
   }
 }
