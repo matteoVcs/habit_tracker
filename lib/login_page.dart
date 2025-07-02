@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'db/database_helper.dart';
 import 'habit_list_page.dart';
+import 'db/supabase_helper.dart';
+import 'style/theme_controller.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -10,102 +11,118 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final DatabaseHelper dbHelper = DatabaseHelper();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-
-  String _message = '';
-  bool _isLogin = true;
-
-  void _toggleMode() {
-    setState(() {
-      _isLogin = !_isLogin;
-      _message = '';
-    });
-  }
+  final TextEditingController emailCtl = TextEditingController();
+  final TextEditingController pwdCtl = TextEditingController();
+  bool isLogin = true;
+  String message = '';
 
   Future<void> _submit() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
+    final email = emailCtl.text.trim();
+    final pwd = pwdCtl.text;
 
-    if (email.isEmpty || password.isEmpty) {
-      setState(() {
-        _message = 'Veuillez remplir tous les champs';
-      });
+    if (email.isEmpty || pwd.isEmpty) {
+      setState(() => message = 'Remplis tous les champs');
       return;
     }
 
-    if (_isLogin) {
-      final user = await dbHelper.loginUser(email, password);
-      if (user != null) {
-        // ✅ Redirection vers la page principale
-        Navigator.of(context).pushReplacement(
+    final ok = isLogin
+        ? await SupabaseHelper.loginUser(email, pwd)
+        : await SupabaseHelper.registerUser(email, pwd);
+
+    if (ok) {
+      if (!isLogin) {
+        setState(() {
+          message = 'Inscription réussie ! Connecte-toi.';
+          isLogin = true;
+        });
+      } else {
+        Navigator.pushReplacement(
+          context,
           MaterialPageRoute(builder: (_) => const HabitListPage()),
         );
-      } else {
-        setState(() {
-          _message = 'Identifiants invalides';
-        });
       }
     } else {
-      final exists = await dbHelper.getUserByEmail(email);
-      if (exists != null) {
-        setState(() {
-          _message = 'Un compte existe déjà avec cet e-mail';
-        });
-        return;
-      }
-
-      final id = await dbHelper.registerUser(email, password);
-      if (id != null) {
-        setState(() {
-          _message = 'Compte créé ! Connectez-vous.';
-          _isLogin = true;
-        });
-      } else {
-        setState(() {
-          _message = 'Erreur lors de l\'inscription';
-        });
-      }
+      setState(() {
+        message = isLogin ? 'Identifiants invalides' : 'Erreur d’inscription';
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(_isLogin ? 'Connexion' : 'Créer un compte')),
+      appBar: AppBar(
+        title: Text(isLogin ? 'Connexion' : 'Créer un compte'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.brightness_6),
+            tooltip: 'Changer le thème',
+            onPressed: () => themeController.toggleTheme(),
+          ),
+        ],
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                TextField(
+                  controller: emailCtl,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Adresse email',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: pwdCtl,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Mot de passe',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.lock),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: _submit,
+                  icon: Icon(isLogin ? Icons.login : Icons.person_add),
+                  label: Text(isLogin ? 'Se connecter' : 'Créer un compte'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      isLogin = !isLogin;
+                      message = '';
+                    });
+                  },
+                  child: Text(
+                    isLogin
+                        ? "Pas encore inscrit ? Créer un compte"
+                        : "J’ai déjà un compte",
+                  ),
+                ),
+                if (message.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    message,
+                    style: TextStyle(
+                      color: theme.colorScheme.error,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ],
             ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Mot de passe'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _submit,
-              child: Text(_isLogin ? 'Se connecter' : 'Créer un compte'),
-            ),
-            TextButton(
-              onPressed: _toggleMode,
-              child: Text(_isLogin
-                  ? 'Pas encore inscrit ? Créer un compte'
-                  : 'Déjà inscrit ? Se connecter'),
-            ),
-            const SizedBox(height: 10),
-            if (_message.isNotEmpty)
-              Text(
-                _message,
-                style: const TextStyle(color: Colors.red),
-              )
-          ],
+          ),
         ),
       ),
     );

@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'theme_controller.dart';
+import 'package:habit_tracker/habit_list_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'style/app_theme.dart' show AppTheme;
+import 'style/theme_controller.dart';
 import 'login_page.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  sqfliteFfiInit();
-  databaseFactory = databaseFactoryFfi;
-
+  await Supabase.initialize(
+    url: 'https://zepzqfoxtmcpfjbzheoo.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplcHpxZm94dG1jcGZqYnpoZW9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NjMzMjMsImV4cCI6MjA2NzAzOTMyM30.hNyOy_xgd3f6Nx9tt2nnPWvrtvTpOzFipzaQcBasRCI',
+  );
   runApp(
     ValueListenableBuilder<ThemeMode>(
       valueListenable: themeController,
@@ -24,16 +28,11 @@ class HabitTrackerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Habit Tracker',
+      debugShowCheckedModeBanner: false,
       themeMode: themeMode,
-      theme: ThemeData(
-        brightness: Brightness.light,
-        primarySwatch: Colors.indigo,
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        primarySwatch: Colors.indigo,
-      ),
-      home: const LoginPage(),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      home: const HabitListPage(),
     );
   }
 }
