@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'habit_list_page.dart';
 import 'db/supabase_helper.dart';
-import 'style/theme_controller.dart';
+import 'style/theme_toggle_slider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -453,7 +453,7 @@ class _LoginPageState extends State<LoginPage> {
       floatingActionButton: Container(
         margin: const EdgeInsets.only(top: 20, right: 8),
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
+          borderRadius: BorderRadius.circular(30),
           gradient: LinearGradient(
             colors: [
               Colors.white.withOpacity(0.2),
@@ -468,13 +468,9 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ],
         ),
-        child: FloatingActionButton(
-          onPressed: () => themeController.toggleTheme(),
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          mini: true,
-          child: const Icon(Icons.brightness_6),
+        child: const Padding(
+          padding: EdgeInsets.all(12.0),
+          child: ThemeToggleSlider(width: 50, height: 25),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endTop,

@@ -114,7 +114,9 @@ class _StatsPageState extends State<StatsPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                theme.colorScheme.primary,
+              ),
             ),
             const SizedBox(height: 16),
             Text(
@@ -195,10 +197,7 @@ class _StatsPageState extends State<StatsPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              theme.colorScheme.primary,
-              theme.colorScheme.secondary,
-            ],
+            colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
           ),
         ),
         padding: const EdgeInsets.all(20),
@@ -207,11 +206,7 @@ class _StatsPageState extends State<StatsPage> {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.analytics,
-                  color: Colors.white,
-                  size: 28,
-                ),
+                Icon(Icons.analytics, color: Colors.white, size: 28),
                 const SizedBox(width: 12),
                 Text(
                   'Résumé de la semaine',
@@ -275,7 +270,12 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
-  Widget _buildStatItem(String title, String value, String subtitle, Color color) {
+  Widget _buildStatItem(
+    String title,
+    String value,
+    String subtitle,
+    Color color,
+  ) {
     return Column(
       children: [
         Text(
@@ -297,10 +297,7 @@ class _StatsPageState extends State<StatsPage> {
         ),
         Text(
           subtitle,
-          style: TextStyle(
-            fontSize: 12,
-            color: color.withOpacity(0.8),
-          ),
+          style: TextStyle(fontSize: 12, color: color.withOpacity(0.8)),
         ),
       ],
     );
@@ -326,13 +323,16 @@ class _StatsPageState extends State<StatsPage> {
             // En-têtes des jours
             Row(
               children: weekDays.map((day) {
-                final isToday = DateFormat('yyyy-MM-dd').format(day) ==
+                final isToday =
+                    DateFormat('yyyy-MM-dd').format(day) ==
                     DateFormat('yyyy-MM-dd').format(DateTime.now());
                 return Expanded(
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
-                      color: isToday ? theme.colorScheme.primary.withOpacity(0.1) : null,
+                      color: isToday
+                          ? theme.colorScheme.primary.withOpacity(0.1)
+                          : null,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -381,7 +381,8 @@ class _StatsPageState extends State<StatsPage> {
             children: weekDays.map((day) {
               final dateString = DateFormat('yyyy-MM-dd').format(day);
               final isChecked = habitStats[dateString] ?? false;
-              final isToday = DateFormat('yyyy-MM-dd').format(day) ==
+              final isToday =
+                  DateFormat('yyyy-MM-dd').format(day) ==
                   DateFormat('yyyy-MM-dd').format(DateTime.now());
 
               return Expanded(
@@ -392,21 +393,18 @@ class _StatsPageState extends State<StatsPage> {
                     color: isChecked
                         ? Colors.green.shade400
                         : (isToday
-                            ? theme.colorScheme.primary.withOpacity(0.1)
-                            : theme.colorScheme.surfaceVariant.withOpacity(0.5)),
+                              ? theme.colorScheme.primary.withOpacity(0.1)
+                              : theme.colorScheme.surfaceVariant.withOpacity(
+                                  0.5,
+                                )),
                     borderRadius: BorderRadius.circular(8),
-                    border: isToday ? Border.all(
-                      color: theme.colorScheme.primary,
-                      width: 2,
-                    ) : null,
+                    border: isToday
+                        ? Border.all(color: theme.colorScheme.primary, width: 2)
+                        : null,
                   ),
                   child: Center(
                     child: isChecked
-                        ? const Icon(
-                            Icons.check,
-                            color: Colors.white,
-                            size: 18,
-                          )
+                        ? const Icon(Icons.check, color: Colors.white, size: 18)
                         : null,
                   ),
                 ),
@@ -447,7 +445,9 @@ class _StatsPageState extends State<StatsPage> {
     final habitName = habit['name'] as String;
     final streak = _getStreakForHabit(habitId);
     final habitStats = weeklyStats[habitId] ?? {};
-    final weekCompletion = habitStats.values.where((completed) => completed).length;
+    final weekCompletion = habitStats.values
+        .where((completed) => completed)
+        .length;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),

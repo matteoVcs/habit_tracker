@@ -3,9 +3,8 @@ import 'package:intl/intl.dart';
 import 'dart:io' show Platform;
 import 'db/supabase_helper.dart';
 import 'stats_page.dart';
-import 'style/theme_controller.dart';
+import 'style/theme_toggle_slider.dart';
 import 'login_page.dart';
-import 'notification_service.dart';
 
 class HabitListPage extends StatefulWidget {
   const HabitListPage({super.key});
@@ -69,7 +68,7 @@ class _HabitListPageState extends State<HabitListPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -110,26 +109,14 @@ class _HabitListPageState extends State<HabitListPage> {
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-                      tooltip: 'Tester notification',
-                      onPressed: () async {
-                        await NotificationService().showTestNotification();
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Notification de test envoyée ! 🔔'),
-                              backgroundColor: theme.colorScheme.primary,
-                              duration: const Duration(seconds: 3),
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.brightness_6, color: Colors.white),
-                      tooltip: 'Changer thème',
-                      onPressed: () => themeController.toggleTheme(),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: ThemeToggleSlider(
+                        width: 50,
+                        height: 25,
+                        activeColor: Colors.white.withOpacity(0.9),
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.logout, color: Colors.white),
@@ -138,7 +125,9 @@ class _HabitListPageState extends State<HabitListPage> {
                         await supabase.auth.signOut();
                         if (mounted) {
                           Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (_) => const LoginPage()),
+                            MaterialPageRoute(
+                              builder: (_) => const LoginPage(),
+                            ),
                             (route) => false,
                           );
                         }
@@ -147,7 +136,7 @@ class _HabitListPageState extends State<HabitListPage> {
                   ],
                 ),
               ),
-              
+
               // Contenu principal dans une carte
               Expanded(
                 child: Container(
@@ -159,7 +148,9 @@ class _HabitListPageState extends State<HabitListPage> {
                       topRight: Radius.circular(24),
                     ),
                   ),
-                  child: _selectedIndex == 0 ? _buildHabitsContent(theme) : _buildStatsContent(),
+                  child: _selectedIndex == 0
+                      ? _buildHabitsContent(theme)
+                      : _buildStatsContent(),
                 ),
               ),
             ],
@@ -241,7 +232,8 @@ class _HabitListPageState extends State<HabitListPage> {
                               ),
                             ),
                             filled: true,
-                            fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                            fillColor: theme.colorScheme.surfaceVariant
+                                .withOpacity(0.3),
                           ),
                           onSubmitted: (_) => _addHabit(),
                         ),
@@ -259,7 +251,7 @@ class _HabitListPageState extends State<HabitListPage> {
                 ],
               ),
             ),
-            
+
             // Liste des habitudes
             Expanded(
               child: habits.isEmpty
@@ -270,7 +262,8 @@ class _HabitListPageState extends State<HabitListPage> {
                           Icon(
                             Icons.psychology_outlined,
                             size: 64,
-                            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withOpacity(0.5),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -283,7 +276,8 @@ class _HabitListPageState extends State<HabitListPage> {
                           Text(
                             'Commencez par ajouter votre première habitude !',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+                              color: theme.colorScheme.onSurfaceVariant
+                                  .withOpacity(0.7),
                             ),
                           ),
                         ],
@@ -293,13 +287,14 @@ class _HabitListPageState extends State<HabitListPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: ListView.builder(
                         itemCount: habits.length,
-                        itemBuilder: (context, index) => _buildHabitCard(habits[index], theme),
+                        itemBuilder: (context, index) =>
+                            _buildHabitCard(habits[index], theme),
                       ),
                     ),
             ),
           ],
         ),
-        
+
         // Zone de suppression (poubelle)
         if (_draggingHabitId != null)
           Positioned(
@@ -318,7 +313,9 @@ class _HabitListPageState extends State<HabitListPage> {
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: isHovering ? Colors.red : Colors.red.withOpacity(0.7),
+                    color: isHovering
+                        ? Colors.red
+                        : Colors.red.withOpacity(0.7),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
@@ -359,7 +356,8 @@ class _HabitListPageState extends State<HabitListPage> {
         return Draggable<String>(
           data: id,
           onDragStarted: () => setState(() => _draggingHabitId = id),
-          onDraggableCanceled: (_, __) => setState(() => _draggingHabitId = null),
+          onDraggableCanceled: (_, __) =>
+              setState(() => _draggingHabitId = null),
           onDragEnd: (_) => setState(() => _draggingHabitId = null),
           feedback: Material(
             color: Colors.transparent,
@@ -368,7 +366,12 @@ class _HabitListPageState extends State<HabitListPage> {
               height: 70, // Hauteur fixe pour le feedback
               child: Opacity(
                 opacity: 0.8,
-                child: _buildCardContent(name, isChecked, theme, isDragging: true),
+                child: _buildCardContent(
+                  name,
+                  isChecked,
+                  theme,
+                  isDragging: true,
+                ),
               ),
             ),
           ),
@@ -382,37 +385,47 @@ class _HabitListPageState extends State<HabitListPage> {
     );
   }
 
-  Widget _buildCardContent(String name, bool isChecked, ThemeData theme, {bool isDragging = false}) {
+  Widget _buildCardContent(
+    String name,
+    bool isChecked,
+    ThemeData theme, {
+    bool isDragging = false,
+  }) {
     return GestureDetector(
-      onTap: isDragging ? null : () {
-        final habit = habits.firstWhere((h) => h['name'] == name);
-        _toggleHabit(habit['id']);
-      },
+      onTap: isDragging
+          ? null
+          : () {
+              final habit = habits.firstWhere((h) => h['name'] == name);
+              _toggleHabit(habit['id']);
+            },
       child: Container(
-        margin: isDragging ? EdgeInsets.zero : const EdgeInsets.symmetric(vertical: 6), // Pas de marge pendant le drag
+        margin: isDragging
+            ? EdgeInsets.zero
+            : const EdgeInsets.symmetric(
+                vertical: 6,
+              ), // Pas de marge pendant le drag
         height: 70, // Hauteur fixe pour le format pillule
         decoration: BoxDecoration(
           gradient: isChecked
               ? LinearGradient(
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
-                  colors: [
-                    Colors.green.shade400,
-                    Colors.green.shade600,
-                  ],
+                  colors: [Colors.green.shade400, Colors.green.shade600],
                 )
               : null,
           color: isChecked ? null : theme.cardColor,
-          borderRadius: BorderRadius.circular(35), // Très arrondi pour l'effet pillule
+          borderRadius: BorderRadius.circular(
+            35,
+          ), // Très arrondi pour l'effet pillule
           border: Border.all(
-            color: isChecked 
-                ? Colors.green.shade300 
+            color: isChecked
+                ? Colors.green.shade300
                 : theme.colorScheme.outline.withOpacity(0.2),
             width: isChecked ? 2 : 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: isChecked 
+              color: isChecked
                   ? Colors.green.withOpacity(0.3)
                   : theme.shadowColor.withOpacity(0.1),
               blurRadius: isChecked ? 8 : 4,
@@ -421,14 +434,17 @@ class _HabitListPageState extends State<HabitListPage> {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), // Padding horizontal pour pillule
+          padding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 12,
+          ), // Padding horizontal pour pillule
           child: Row(
             children: [
               // Icône à gauche
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isChecked 
+                  color: isChecked
                       ? Colors.white.withOpacity(0.2)
                       : theme.colorScheme.primary.withOpacity(0.1),
                   shape: BoxShape.circle,
@@ -436,13 +452,10 @@ class _HabitListPageState extends State<HabitListPage> {
                 child: Icon(
                   isChecked ? Icons.check_circle : Icons.radio_button_unchecked,
                   size: 24,
-                  color: isChecked 
-                      ? Colors.white 
-                      : theme.colorScheme.primary,
+                  color: isChecked ? Colors.white : theme.colorScheme.primary,
                 ),
               ),
               const SizedBox(width: 16), // Espacement entre icône et texte
-              
               // Texte au centre
               Expanded(
                 child: Column(
@@ -453,16 +466,20 @@ class _HabitListPageState extends State<HabitListPage> {
                       name,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: isChecked ? Colors.white : theme.colorScheme.onSurface,
+                        color: isChecked
+                            ? Colors.white
+                            : theme.colorScheme.onSurface,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isChecked ? 'Terminé aujourd\'hui !' : 'À faire aujourd\'hui',
+                      isChecked
+                          ? 'Terminé aujourd\'hui !'
+                          : 'À faire aujourd\'hui',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: isChecked 
+                        color: isChecked
                             ? Colors.white.withOpacity(0.8)
                             : theme.colorScheme.onSurfaceVariant,
                       ),
@@ -470,14 +487,14 @@ class _HabitListPageState extends State<HabitListPage> {
                   ],
                 ),
               ),
-              
+
               // Indicateur de statut à droite
               Container(
                 width: 12,
                 height: 12,
                 decoration: BoxDecoration(
-                  color: isChecked 
-                      ? Colors.white 
+                  color: isChecked
+                      ? Colors.white
                       : theme.colorScheme.outline.withOpacity(0.3),
                   shape: BoxShape.circle,
                 ),
