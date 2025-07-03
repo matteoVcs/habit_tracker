@@ -36,8 +36,8 @@ class NotificationService {
       defaultActionName: 'Open',
     );
     const windowsSettings = WindowsInitializationSettings(
-      appName: 'Tempo',
-      appUserModelId: 'com.klapee.tempo',
+      appName: 'habit_tracker',
+      appUserModelId: 'com.klapee.habit_tracker',
       guid: '9970ea82-ea77-44ba-aeb7-6521355f11a2',
     );
 
