@@ -43,7 +43,7 @@ class _LoginPageState extends State<LoginPage> {
       }
     } else {
       setState(() {
-        message = isLogin ? 'Identifiants invalides' : 'Erreur d’inscription';
+        message = isLogin ? 'Identifiants invalides' : 'Erreur d\'inscription';
       });
     }
   }
@@ -51,80 +51,236 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isLogin ? 'Connexion' : 'Créer un compte'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.brightness_6),
-            tooltip: 'Changer le thème',
-            onPressed: () => themeController.toggleTheme(),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              theme.colorScheme.primary,
+              theme.colorScheme.secondary,
+            ],
           ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextField(
-                  controller: emailCtl,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Adresse email',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
-                  ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Card(
+                elevation: 8,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: pwdCtl,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Mot de passe',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: _submit,
-                  icon: Icon(isLogin ? Icons.login : Icons.person_add),
-                  label: Text(isLogin ? 'Se connecter' : 'Créer un compte'),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(50),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      isLogin = !isLogin;
-                      message = '';
-                    });
-                  },
-                  child: Text(
-                    isLogin
-                        ? "Pas encore inscrit ? Créer un compte"
-                        : "J’ai déjà un compte",
-                  ),
-                ),
-                if (message.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    message,
-                    style: TextStyle(
-                      color: theme.colorScheme.error,
-                      fontWeight: FontWeight.w500,
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // En-tête avec icône et titre
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isLogin ? Icons.login : Icons.person_add,
+                            size: 48,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          isLogin ? 'Connexion' : 'Créer un compte',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          isLogin 
+                            ? 'Connectez-vous pour suivre vos habitudes'
+                            : 'Créez votre compte pour commencer',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 32),
+                        
+                        // Champ email
+                        TextField(
+                          controller: emailCtl,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            labelText: 'Adresse email',
+                            hintText: 'votre@email.com',
+                            prefixIcon: Icon(
+                              Icons.email_outlined,
+                              color: theme.colorScheme.primary,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.primary,
+                                width: 2,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        
+                        // Champ mot de passe
+                        TextField(
+                          controller: pwdCtl,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: 'Mot de passe',
+                            hintText: '••••••••',
+                            prefixIcon: Icon(
+                              Icons.lock_outline,
+                              color: theme.colorScheme.primary,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.primary,
+                                width: 2,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        
+                        // Bouton principal
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: theme.colorScheme.primary,
+                              foregroundColor: theme.colorScheme.onPrimary,
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(isLogin ? Icons.login : Icons.person_add),
+                                const SizedBox(width: 8),
+                                Text(
+                                  isLogin ? 'Se connecter' : 'Créer un compte',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Bouton de changement de mode
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              isLogin = !isLogin;
+                              message = '';
+                            });
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: theme.colorScheme.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text(
+                            isLogin
+                                ? "Pas encore inscrit ? Créer un compte"
+                                : "J'ai déjà un compte",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        
+                        // Message d'erreur ou de succès
+                        if (message.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: message.contains('réussie')
+                                  ? theme.colorScheme.primaryContainer
+                                  : theme.colorScheme.errorContainer,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  message.contains('réussie')
+                                      ? Icons.check_circle_outline
+                                      : Icons.error_outline,
+                                  color: message.contains('réussie')
+                                      ? theme.colorScheme.onPrimaryContainer
+                                      : theme.colorScheme.onErrorContainer,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    message,
+                                    style: TextStyle(
+                                      color: message.contains('réussie')
+                                          ? theme.colorScheme.onPrimaryContainer
+                                          : theme.colorScheme.onErrorContainer,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                ],
-              ],
+                ),
+              ),
             ),
           ),
         ),
       ),
+      // Bouton de changement de thème en position flottante
+      floatingActionButton: Container(
+        margin: const EdgeInsets.only(top: 40),
+        child: FloatingActionButton(
+          onPressed: () => themeController.toggleTheme(),
+          backgroundColor: Colors.white.withOpacity(0.2),
+          foregroundColor: Colors.white,
+          elevation: 2,
+          mini: true,
+          child: const Icon(Icons.brightness_6),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
     );
   }
 }
