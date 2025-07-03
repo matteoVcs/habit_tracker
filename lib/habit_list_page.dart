@@ -41,8 +41,26 @@ class _HabitListPageState extends State<HabitListPage> {
   }
 
   Future<void> _deleteHabit(String id) async {
+    final habitToDelete = habits.firstWhere((h) => h['id'] == id);
+
+    // Supprimer immédiatement
     await SupabaseHelper.deleteHabit(id);
     await _loadHabits();
+
+    // Afficher SnackBar avec "Annuler"
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Habitude « ${habitToDelete['name']} » supprimée"),
+        action: SnackBarAction(
+          label: 'Annuler',
+          onPressed: () async {
+            await SupabaseHelper.addHabit(habitToDelete['name']);
+            await _loadHabits();
+          },
+        ),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   Future<void> _toggleHabit(String id) async {
@@ -57,48 +75,39 @@ class _HabitListPageState extends State<HabitListPage> {
         final isChecked = snapshot.data ?? false;
 
         return Container(
-          width: 250,
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
           child: Card(
-            elevation: 4,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(24),
             ),
+            color: Theme.of(context).cardColor,
+            elevation: 2,
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min, // <- clé pour compacter
                 children: [
                   Text(
                     habit['name'],
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: const TextStyle(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: isChecked,
-                            onChanged: (_) => _toggleHabit(habit['id']),
-                          ),
-                          const Text('Fait'),
-                        ],
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete_outline,
-                          color: Colors.redAccent,
-                        ),
-                        tooltip: 'Supprimer',
-                        onPressed: () => _deleteHabit(habit['id']),
-                      ),
-                    ],
+                  const SizedBox(width: 8),
+                  Checkbox(
+                    value: isChecked,
+                    onChanged: (_) => _toggleHabit(habit['id']),
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.redAccent,
+                      size: 18,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => _deleteHabit(habit['id']),
                   ),
                 ],
               ),
@@ -156,17 +165,21 @@ class _HabitListPageState extends State<HabitListPage> {
                     ],
                   ),
                 ),
-                Expanded(
-                  child: habits.isEmpty
-                      ? const Center(child: Text("Aucune habitude ajoutée"))
-                      : ListView.builder(
+                habits.isEmpty
+                    ? const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text("Aucune habitude ajoutée"),
+                      )
+                    : SizedBox(
+                        height: 80, // 👈 fixe la hauteur des cartes
+                        child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           itemCount: habits.length,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           itemBuilder: (context, index) =>
                               _buildHabitCard(habits[index]),
                         ),
-                ),
+                      ),
               ],
             )
           : _pages[_selectedIndex],
