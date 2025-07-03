@@ -19,16 +19,15 @@ class _HabitListPageState extends State<HabitListPage> {
   int _selectedIndex = 0;
   String? _draggingHabitId;
 
- @override
+  @override
   void initState() {
-  super.initState();
-  if (supabase.auth.currentUser == null) {
-    Navigator.of(context).pushReplacementNamed('/');
-    return;
+    super.initState();
+    if (supabase.auth.currentUser == null) {
+      Navigator.of(context).pushReplacementNamed('/');
+      return;
+    }
+    _loadHabits();
   }
-  _loadHabits();
-}
-
 
   Future<void> _loadHabits() async {
     final loaded = await SupabaseHelper.getHabits();
@@ -83,24 +82,38 @@ class _HabitListPageState extends State<HabitListPage> {
       builder: (context, snapshot) {
         final isChecked = snapshot.data ?? false;
 
-        return LongPressDraggable<String>(
+        return Draggable<String>(
           data: id,
           onDragStarted: () => setState(() => _draggingHabitId = id),
           onDraggableCanceled: (_, __) =>
               setState(() => _draggingHabitId = null),
           onDragEnd: (_) => setState(() => _draggingHabitId = null),
-          feedback: Opacity(
-            opacity: 0.7,
-            child: _buildCard(id, name, isChecked),
+          feedback: Material(
+            color: Colors.transparent,
+            child: Opacity(
+              opacity: 0.7,
+              child: _buildCard(id, name, isChecked, isDragging: true),
+            ),
           ),
+
           childWhenDragging: const SizedBox(width: 0),
-          child: _buildCard(id, name, isChecked),
+          child: _buildCard(
+            id,
+            name,
+            isChecked,
+            isDragging: _draggingHabitId == id,
+          ),
         );
       },
     );
   }
 
-  Widget _buildCard(String id, String name, bool isChecked) {
+  Widget _buildCard(
+    String id,
+    String name,
+    bool isChecked, {
+    bool isDragging = false,
+  }) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -174,24 +187,23 @@ class _HabitListPageState extends State<HabitListPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Suivi d’habitudes'),
-       actions: [
-        IconButton(
-          icon: const Icon(Icons.brightness_6),
-          tooltip: 'Changer thème',
-          onPressed: () => themeController.toggleTheme(),
-        ),
-        IconButton(
-          icon: const Icon(Icons.logout),
-          tooltip: 'Déconnexion',
-          onPressed: () async {
-            await supabase.auth.signOut();
-            if (context.mounted) {
-              Navigator.of(context).pushReplacementNamed('/');
-            }
-          },
-        ),
-      ],
-
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.brightness_6),
+            tooltip: 'Changer thème',
+            onPressed: () => themeController.toggleTheme(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Déconnexion',
+            onPressed: () async {
+              await supabase.auth.signOut();
+              if (context.mounted) {
+                Navigator.of(context).pushReplacementNamed('/');
+              }
+            },
+          ),
+        ],
       ),
       body: Stack(
         children: [
