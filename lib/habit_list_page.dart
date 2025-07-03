@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'db/supabase_helper.dart';
 import 'stats_page.dart';
 import 'style/theme_controller.dart';
+import 'login_page.dart';
 
 class HabitListPage extends StatefulWidget {
   const HabitListPage({super.key});
@@ -19,15 +20,18 @@ class _HabitListPageState extends State<HabitListPage> {
   int _selectedIndex = 0;
   String? _draggingHabitId;
 
- @override
-  void initState() {
+@override
+void initState() {
   super.initState();
-  if (supabase.auth.currentUser == null) {
-    Navigator.of(context).pushReplacementNamed('/');
-    return;
-  }
-  _loadHabits();
+  Future.microtask(() {
+    if (supabase.auth.currentUser == null && mounted) {
+      Navigator.of(context).pushReplacementNamed('/');
+    } else {
+      _loadHabits();
+    }
+  });
 }
+
 
 
   Future<void> _loadHabits() async {
@@ -184,11 +188,14 @@ class _HabitListPageState extends State<HabitListPage> {
           icon: const Icon(Icons.logout),
           tooltip: 'Déconnexion',
           onPressed: () async {
-            await supabase.auth.signOut();
-            if (context.mounted) {
-              Navigator.of(context).pushReplacementNamed('/');
-            }
-          },
+          await supabase.auth.signOut();
+          if (mounted) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const LoginPage()),
+              (route) => false,
+            );
+          }
+        },
         ),
       ],
 
