@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:habit_tracker/db/supabase_helper.dart';
 import 'package:habit_tracker/habit_list_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'style/app_theme.dart' show AppTheme;
 import 'style/theme_controller.dart';
 import 'login_page.dart';
+import 'notification_service.dart';
 
 const supabaseUrl = 'https://zepzqfoxtmcpfjbzheoo.supabase.co';
 const supabaseKey =
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplcHpxZm94dG1jcGZqYnpoZW9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NjMzMjMsImV4cCI6MjA2NzAzOTMyM30.hNyOy_xgd3f6Nx9tt2nnPWvrtvTpOzFipzaQcBasRCI';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();  
+  await NotificationService.init(); 
+
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
   runApp(
     ValueListenableBuilder<ThemeMode>(
