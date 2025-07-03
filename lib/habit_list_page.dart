@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:io' show Platform;
 import 'db/supabase_helper.dart';
 import 'stats_page.dart';
 import 'style/theme_controller.dart';
 import 'login_page.dart';
-import 'notification_service.dart';
 
 class HabitListPage extends StatefulWidget {
   const HabitListPage({super.key});
@@ -192,30 +192,6 @@ class _HabitListPageState extends State<HabitListPage> {
       appBar: AppBar(
         title: const Text('Suivi d’habitudes'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_active),
-            tooltip: 'Test notification',
-            onPressed: () async {
-              await NotificationService.showTestNotification();
-              // Vérifier seulement sur mobile
-              if (Theme.of(context).platform == TargetPlatform.android || 
-                  Theme.of(context).platform == TargetPlatform.iOS) {
-                await NotificationService.checkScheduledNotifications();
-              }
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      Theme.of(context).platform == TargetPlatform.windows
-                          ? 'Test de notification (notifications planifiées disponibles sur mobile uniquement)'
-                          : 'Notification de test envoyée ! Vérifiez aussi la console.',
-                    ),
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
-              }
-            },
-          ),
           IconButton(
             icon: const Icon(Icons.brightness_6),
             tooltip: 'Changer thème',
