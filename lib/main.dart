@@ -27,13 +27,15 @@ class HabitTrackerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+     final session = Supabase.instance.client.auth.currentSession;
+     
     return MaterialApp(
       title: 'Habit Tracker',
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      home: const LoginPage(),
+       home: session != null ? const HabitListPage() : const LoginPage(),
     );
   }
 }
