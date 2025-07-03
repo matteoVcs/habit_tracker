@@ -192,6 +192,11 @@ class _LoginPageState extends State<LoginPage> {
                                       controller: emailCtl,
                                       keyboardType: TextInputType.emailAddress,
                                       style: const TextStyle(fontSize: 16),
+                                      textInputAction: TextInputAction.next,
+                                      onSubmitted: (_) {
+                                        // Passer au champ suivant (mot de passe)
+                                        FocusScope.of(context).nextFocus();
+                                      },
                                       decoration: InputDecoration(
                                         labelText: 'Adresse email',
                                         hintText: 'votre@email.com',
@@ -255,6 +260,11 @@ class _LoginPageState extends State<LoginPage> {
                                       controller: pwdCtl,
                                       obscureText: true,
                                       style: const TextStyle(fontSize: 16),
+                                      textInputAction: TextInputAction.done,
+                                      onSubmitted: (_) {
+                                        // Se connecter quand on appuie sur Entrée
+                                        _submit();
+                                      },
                                       decoration: InputDecoration(
                                         labelText: 'Mot de passe',
                                         hintText: '••••••••',
