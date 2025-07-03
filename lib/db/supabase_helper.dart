@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 final supabase = Supabase.instance.client;
 
 class SupabaseHelper {
-  
   // Connexion
   static Future<bool> loginUser(String email, String password) async {
     final res = await supabase.auth.signInWithPassword(
@@ -69,22 +68,36 @@ class SupabaseHelper {
     }
   }
 
-  // Récupère le nombre de checks pour les 7 derniers jours
+  // Récupère le nombre de checks pour la semaine courante (lundi à dimanche)
   static Future<int> getWeeklyCheckCount(dynamic habitId, DateTime now) async {
-    final start = now
-        .subtract(const Duration(days: 6))
-        .toIso8601String()
-        .split('T')
-        .first;
-    final end = now.toIso8601String().split('T').first;
+    // Calcule le début de la semaine (lundi)
+    final mondayOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    final start = mondayOfWeek.toIso8601String().split('T').first;
 
-    final result = await supabase
-        .rpc(
-          'count_checks',
-          params: {'h_id': habitId, 'start_date': start, 'end_date': end},
-        )
-        .select();
+    // Fin de la semaine (dimanche)
+    final sundayOfWeek = mondayOfWeek.add(const Duration(days: 6));
+    final end = sundayOfWeek.toIso8601String().split('T').first;
 
-    return result as int;
+    try {
+      // Essaie d'abord avec la fonction RPC
+      final result = await supabase
+          .rpc(
+            'count_checks',
+            params: {'h_id': habitId, 'start_date': start, 'end_date': end},
+          )
+          .select();
+
+      return result as int;
+    } catch (e) {
+      // Si la fonction RPC n'existe pas, compte manuellement
+      final checks = await supabase
+          .from('habit_checks')
+          .select()
+          .eq('habit_id', habitId)
+          .gte('date', start)
+          .lte('date', end);
+
+      return (checks as List).length;
+    }
   }
 }

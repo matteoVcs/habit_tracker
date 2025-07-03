@@ -20,19 +20,17 @@ class _HabitListPageState extends State<HabitListPage> {
   int _selectedIndex = 0;
   String? _draggingHabitId;
 
-@override
-void initState() {
-  super.initState();
-  Future.microtask(() {
-    if (supabase.auth.currentUser == null && mounted) {
-      Navigator.of(context).pushReplacementNamed('/');
-    } else {
-      _loadHabits();
-    }
-  });
-}
-
-
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      if (supabase.auth.currentUser == null && mounted) {
+        Navigator.of(context).pushReplacementNamed('/');
+      } else {
+        _loadHabits();
+      }
+    });
+  }
 
   Future<void> _loadHabits() async {
     final loaded = await SupabaseHelper.getHabits();
@@ -192,32 +190,31 @@ void initState() {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Suivi d’habitudes'),
-       actions: [
-        IconButton(
-          icon: const Icon(Icons.brightness_6),
-          tooltip: 'Changer thème',
-          onPressed: () => themeController.toggleTheme(),
-        ),
-        IconButton(
-          icon: const Icon(Icons.logout),
-          tooltip: 'Déconnexion',
-          onPressed: () async {
-          await supabase.auth.signOut();
-          if (mounted) {
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const LoginPage()),
-              (route) => false,
-            );
-          }
-        },
-        ),
-      ],
-
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.brightness_6),
+            tooltip: 'Changer thème',
+            onPressed: () => themeController.toggleTheme(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Déconnexion',
+            onPressed: () async {
+              await supabase.auth.signOut();
+              if (mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
+                );
+              }
+            },
+          ),
+        ],
       ),
-      body: Stack(
-        children: [
-          _selectedIndex == 0
-              ? Column(
+      body: _selectedIndex == 0
+          ? Stack(
+              children: [
+                Column(
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(12),
@@ -257,33 +254,34 @@ void initState() {
                             ),
                           ),
                   ],
-                )
-              : _pages[_selectedIndex],
-
-          // Zone Drop Poubelle
-          Positioned(
-            bottom: 16,
-            left: 16,
-            child: DragTarget<String>(
-              onWillAccept: (data) => true,
-              onAccept: (id) => _deleteHabit(id),
-              builder: (context, candidateData, rejectedData) {
-                final isHovering = candidateData.isNotEmpty;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: isHovering ? Colors.redAccent : Colors.grey[300],
-                    shape: BoxShape.circle,
+                ),
+                // Zone Drop Poubelle - uniquement sur la page des habitudes
+                Positioned(
+                  bottom: 16,
+                  left: 16,
+                  child: DragTarget<String>(
+                    onWillAccept: (data) => true,
+                    onAccept: (id) => _deleteHabit(id),
+                    builder: (context, candidateData, rejectedData) {
+                      final isHovering = candidateData.isNotEmpty;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: isHovering
+                              ? Colors.redAccent
+                              : Colors.grey[300],
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      );
+                    },
                   ),
-                  child: const Icon(Icons.delete, color: Colors.white),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+                ),
+              ],
+            )
+          : _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
