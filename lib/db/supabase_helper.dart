@@ -3,6 +3,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 final supabase = Supabase.instance.client;
 
 class SupabaseHelper {
+  static Future<void> init() async {
+    await Supabase.initialize(
+      url: 'https://zepzqfoxtmcpfjbzheoo.supabase.co',
+      anonKey:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplcHpxZm94dG1jcGZqYnpoZW9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NjMzMjMsImV4cCI6MjA2NzAzOTMyM30.hNyOy_xgd3f6Nx9tt2nnPWvrtvTpOzFipzaQcBasRCI',
+    );
+  }
+
   // Connexion
   static Future<bool> loginUser(String email, String password) async {
     final res = await supabase.auth.signInWithPassword(
