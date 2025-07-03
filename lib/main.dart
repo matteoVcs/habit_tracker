@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'style/app_theme.dart' show AppTheme;
 import 'style/theme_controller.dart';
 import 'login_page.dart';
+import 'notification_service.dart';
 
 const supabaseUrl = 'https://zepzqfoxtmcpfjbzheoo.supabase.co';
 const supabaseKey =
@@ -13,6 +14,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
+  
+  // Initialiser le service de notifications
+  await NotificationService().init();
+  
   runApp(
     ValueListenableBuilder<ThemeMode>(
       valueListenable: themeController,

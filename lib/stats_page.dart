@@ -11,8 +11,7 @@ class StatsPage extends StatefulWidget {
 
 class _StatsPageState extends State<StatsPage> {
   List<Map<String, dynamic>> habits = [];
-  Map<String, Map<String, bool>> weeklyStats =
-      {}; // habitId -> {date -> isChecked}
+  Map<String, Map<String, bool>> weeklyStats = {};
   List<DateTime> weekDays = [];
   bool isLoading = true;
 
@@ -49,194 +48,467 @@ class _StatsPageState extends State<StatsPage> {
           );
           dailyStats[dateString] = isChecked;
         }
-
         statsMap[habitId] = dailyStats;
       }
 
-      if (mounted) {
-        setState(() {
-          habits = List<Map<String, dynamic>>.from(fetchedHabits);
-          weeklyStats = statsMap;
-          weekDays = currentWeekDays;
-          isLoading = false;
-        });
-      }
+      setState(() {
+        habits = fetchedHabits;
+        weeklyStats = statsMap;
+        weekDays = currentWeekDays;
+        isLoading = false;
+      });
     } catch (e) {
-      debugPrint('Erreur chargement stats : $e');
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-          habits = [];
-          weeklyStats = {};
-          weekDays = [];
-        });
+      print('Erreur lors du chargement des stats: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  double _calculateCompletionRate() {
+    if (habits.isEmpty || weeklyStats.isEmpty) return 0.0;
+
+    int totalTasks = 0;
+    int completedTasks = 0;
+
+    for (final habit in habits) {
+      final habitId = habit['id'] as String;
+      final habitStats = weeklyStats[habitId] ?? {};
+
+      for (final isCompleted in habitStats.values) {
+        totalTasks++;
+        if (isCompleted) completedTasks++;
       }
     }
+
+    return totalTasks > 0 ? completedTasks / totalTasks : 0.0;
+  }
+
+  int _getStreakForHabit(String habitId) {
+    final habitStats = weeklyStats[habitId] ?? {};
+    int streak = 0;
+
+    // Calcule la série en partant d'aujourd'hui et en remontant
+    final today = DateTime.now();
+    for (int i = 0; i < 30; i++) {
+      final date = today.subtract(Duration(days: i));
+      final dateString = DateFormat('yyyy-MM-dd').format(date);
+
+      if (habitStats[dateString] == true) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+
+    return streak;
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Chargement des statistiques...',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     if (habits.isEmpty) {
-      return const Center(child: Text('Aucune habitude trouvée'));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.analytics_outlined,
+              size: 64,
+              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Aucune statistique disponible',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Ajoutez des habitudes pour voir vos progrès !',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
+      );
     }
+
+    final completionRate = _calculateCompletionRate();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Suivi hebdomadaire',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          // Résumé de la semaine
+          _buildWeeklySummaryCard(theme, completionRate),
+          const SizedBox(height: 20),
+
+          // Calendrier de la semaine
+          _buildWeeklyCalendarCard(theme),
+          const SizedBox(height: 20),
+
+          // Statistiques par habitude
+          _buildHabitsStatsCard(theme),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeeklySummaryCard(ThemeData theme, double completionRate) {
+    final completedHabits = habits.where((habit) {
+      final habitId = habit['id'] as String;
+      final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      return weeklyStats[habitId]?[today] ?? false;
+    }).length;
+
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              theme.colorScheme.primary,
+              theme.colorScheme.secondary,
+            ],
           ),
-          const SizedBox(height: 16),
-          _buildWeeklyTable(),
-        ],
-      ),
-    );
-  }
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.analytics,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Résumé de la semaine',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
 
-  Widget _buildWeeklyTable() {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          // En-tête avec les jours de la semaine
-          _buildTableHeader(),
-          // Lignes pour chaque habitude
-          ...habits.map((habit) => _buildHabitRow(habit)),
-        ],
-      ),
-    );
-  }
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatItem(
+                    'Aujourd\'hui',
+                    '$completedHabits/${habits.length}',
+                    'habitudes terminées',
+                    Colors.white,
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: Colors.white.withOpacity(0.3),
+                ),
+                Expanded(
+                  child: _buildStatItem(
+                    'Cette semaine',
+                    '${(completionRate * 100).toInt()}%',
+                    'de réussite',
+                    Colors.white,
+                  ),
+                ),
+              ],
+            ),
 
-  Widget _buildTableHeader() {
-    final dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+            const SizedBox(height: 16),
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(8),
-          topRight: Radius.circular(8),
+            // Barre de progression
+            Container(
+              height: 8,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: FractionallySizedBox(
+                widthFactor: completionRate,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      child: Row(
-        children: [
-          // Colonne vide pour les noms d'habitudes
-          Expanded(
-            flex: 2,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                'Habitudes',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+    );
+  }
+
+  Widget _buildStatItem(String title, String value, String subtitle, Color color) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+        Text(
+          subtitle,
+          style: TextStyle(
+            fontSize: 12,
+            color: color.withOpacity(0.8),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeeklyCalendarCard(ThemeData theme) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Calendrier de la semaine',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ),
-          // Colonnes pour chaque jour
-          ...List.generate(7, (index) {
-            final day = weekDays[index];
-            final isToday = DateUtils.isSameDay(day, DateTime.now());
+            const SizedBox(height: 16),
 
-            return Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: Border(left: BorderSide(color: Colors.grey.shade300)),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      dayNames[index],
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: isToday
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        color: isToday
-                            ? Theme.of(context).colorScheme.primary
-                            : null,
+            // En-têtes des jours
+            Row(
+              children: weekDays.map((day) {
+                final isToday = DateFormat('yyyy-MM-dd').format(day) ==
+                    DateFormat('yyyy-MM-dd').format(DateTime.now());
+                return Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isToday ? theme.colorScheme.primary.withOpacity(0.1) : null,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      DateFormat('E').format(day),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: isToday ? theme.colorScheme.primary : null,
                       ),
                     ),
-                    Text(
-                      '${day.day}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: isToday
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        color: isToday
-                            ? Theme.of(context).colorScheme.primary
-                            : null,
-                      ),
-                    ),
-                  ],
+                  ),
+                );
+              }).toList(),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Grille des habitudes
+            ...habits.map((habit) => _buildHabitWeekRow(habit, theme)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHabitWeekRow(Map<String, dynamic> habit, ThemeData theme) {
+    final habitId = habit['id'] as String;
+    final habitName = habit['name'] as String;
+    final habitStats = weeklyStats[habitId] ?? {};
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            habitName,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: weekDays.map((day) {
+              final dateString = DateFormat('yyyy-MM-dd').format(day);
+              final isChecked = habitStats[dateString] ?? false;
+              final isToday = DateFormat('yyyy-MM-dd').format(day) ==
+                  DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+              return Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: isChecked
+                        ? Colors.green.shade400
+                        : (isToday
+                            ? theme.colorScheme.primary.withOpacity(0.1)
+                            : theme.colorScheme.surfaceVariant.withOpacity(0.5)),
+                    borderRadius: BorderRadius.circular(8),
+                    border: isToday ? Border.all(
+                      color: theme.colorScheme.primary,
+                      width: 2,
+                    ) : null,
+                  ),
+                  child: Center(
+                    child: isChecked
+                        ? const Icon(
+                            Icons.check,
+                            color: Colors.white,
+                            size: 18,
+                          )
+                        : null,
+                  ),
                 ),
-              ),
-            );
-          }),
+              );
+            }).toList(),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHabitRow(Map<String, dynamic> habit) {
+  Widget _buildHabitsStatsCard(ThemeData theme) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Statistiques par habitude',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            ...habits.map((habit) => _buildHabitStatRow(habit, theme)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHabitStatRow(Map<String, dynamic> habit, ThemeData theme) {
     final habitId = habit['id'] as String;
-    final habitName = habit['name'] ?? 'Sans nom';
+    final habitName = habit['name'] as String;
+    final streak = _getStreakForHabit(habitId);
     final habitStats = weeklyStats[habitId] ?? {};
+    final weekCompletion = habitStats.values.where((completed) => completed).length;
 
     return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: Colors.grey.shade300)),
+        color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          // Nom de l'habitude
-          Expanded(
-            flex: 2,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                habitName,
-                style: Theme.of(context).textTheme.bodyMedium,
-                overflow: TextOverflow.ellipsis,
-              ),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.trending_up,
+              color: theme.colorScheme.primary,
+              size: 20,
             ),
           ),
-          // Cases pour chaque jour
-          ...List.generate(7, (index) {
-            final day = weekDays[index];
-            final dateString = DateFormat('yyyy-MM-dd').format(day);
-            final isChecked = habitStats[dateString] ?? false;
-            final isToday = DateUtils.isSameDay(day, DateTime.now());
-
-            return Expanded(
-              child: Container(
-                height: 50,
-                decoration: BoxDecoration(
-                  border: Border(left: BorderSide(color: Colors.grey.shade300)),
-                  color: isToday
-                      ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
-                      : null,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  habitName,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                child: Center(
-                  child: isChecked
-                      ? const Text('✅', style: TextStyle(fontSize: 20))
-                      : null,
+                const SizedBox(height: 4),
+                Text(
+                  'Série actuelle: $streak jour${streak > 1 ? 's' : ''}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '$weekCompletion/7',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
                 ),
               ),
-            );
-          }),
+              Text(
+                'cette semaine',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
