@@ -5,6 +5,8 @@ import 'db/supabase_helper.dart';
 import 'stats_page.dart';
 import 'style/theme_toggle_slider.dart';
 import 'login_page.dart';
+import 'notification_service.dart';
+import 'notification_service.dart';
 
 class HabitListPage extends StatefulWidget {
   const HabitListPage({super.key});
@@ -24,11 +26,13 @@ class _HabitListPageState extends State<HabitListPage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
+    Future.microtask(() async {
       if (supabase.auth.currentUser == null && mounted) {
         Navigator.of(context).pushReplacementNamed('/');
       } else {
-        _loadHabits();
+        await _loadHabits();
+        // Vérifie les rappels au démarrage de l'app
+        await NotificationService().checkAndSendReminders();
       }
     });
   }
@@ -44,6 +48,18 @@ class _HabitListPageState extends State<HabitListPage> {
     final name = _controller.text.trim();
     if (name.isNotEmpty) {
       await SupabaseHelper.addHabit(name);
+      
+      // Récupère la nouvelle habitude pour obtenir son ID
+      final habits = await SupabaseHelper.getHabits();
+      final newHabit = habits.firstWhere((h) => h['name'] == name);
+      
+      // Planifie un rappel pour cette habitude dans 24h
+      await NotificationService().scheduleHabitReminder(
+        habitId: newHabit['id'],
+        habitName: name,
+        createdDate: DateTime.now(),
+      );
+      
       _controller.clear();
       await _loadHabits();
     }
@@ -56,6 +72,13 @@ class _HabitListPageState extends State<HabitListPage> {
 
   Future<void> _toggleHabit(String id) async {
     await SupabaseHelper.toggleCheck(id, today);
+    
+    // Si l'habitude vient d'être validée, annule le rappel
+    final isNowChecked = await SupabaseHelper.isHabitChecked(id, today);
+    if (isNowChecked) {
+      await NotificationService().cancelHabitReminder(id);
+    }
+    
     setState(() {});
   }
 
@@ -117,6 +140,22 @@ class _HabitListPageState extends State<HabitListPage> {
                         activeColor: Colors.white.withOpacity(0.9),
                         backgroundColor: Colors.white.withOpacity(0.2),
                       ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.notification_important, color: Colors.white),
+                      tooltip: 'Vérifier les rappels',
+                      onPressed: () async {
+                        await NotificationService().checkAndSendReminders();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Vérification des rappels terminée ! 🔔'),
+                              backgroundColor: theme.colorScheme.primary,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
                     ),
                     IconButton(
                       icon: const Icon(Icons.logout, color: Colors.white),
