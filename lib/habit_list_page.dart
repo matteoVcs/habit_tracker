@@ -17,6 +17,7 @@ class _HabitListPageState extends State<HabitListPage> {
 
   List<Map<String, dynamic>> habits = [];
   int _selectedIndex = 0;
+  String? _draggingHabitId;
 
   @override
   void initState() {
@@ -42,12 +43,9 @@ class _HabitListPageState extends State<HabitListPage> {
 
   Future<void> _deleteHabit(String id) async {
     final habitToDelete = habits.firstWhere((h) => h['id'] == id);
-
-    // Supprimer immédiatement
     await SupabaseHelper.deleteHabit(id);
     await _loadHabits();
 
-    // Afficher SnackBar avec "Annuler"
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("Habitude « ${habitToDelete['name']} » supprimée"),
@@ -65,56 +63,96 @@ class _HabitListPageState extends State<HabitListPage> {
 
   Future<void> _toggleHabit(String id) async {
     await SupabaseHelper.toggleCheck(id, today);
-    setState(() {}); // refresh UI
+    setState(() {});
   }
 
   Widget _buildHabitCard(Map<String, dynamic> habit) {
+    final String id = habit['id'] ?? '';
+    final String name = habit['name'] ?? 'Sans nom';
+
+    if (!_isValidUuid(id))
+      return const SizedBox(); // Ne construit rien si id invalide
+
     return FutureBuilder<bool>(
-      future: SupabaseHelper.isHabitChecked(habit['id'], today),
+      future: SupabaseHelper.isHabitChecked(id, today),
       builder: (context, snapshot) {
         final isChecked = snapshot.data ?? false;
 
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-          child: Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            color: Theme.of(context).cardColor,
-            elevation: 2,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Row(
-                mainAxisSize: MainAxisSize.min, // <- clé pour compacter
-                children: [
-                  Text(
-                    habit['name'],
-                    style: const TextStyle(fontSize: 14),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(width: 8),
-                  Checkbox(
-                    value: isChecked,
-                    onChanged: (_) => _toggleHabit(habit['id']),
-                    visualDensity: VisualDensity.compact,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.delete_outline,
-                      color: Colors.redAccent,
-                      size: 18,
-                    ),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    onPressed: () => _deleteHabit(habit['id']),
-                  ),
-                ],
-              ),
-            ),
+        return LongPressDraggable<String>(
+          data: id,
+          onDragStarted: () => setState(() => _draggingHabitId = id),
+          onDraggableCanceled: (_, __) =>
+              setState(() => _draggingHabitId = null),
+          onDragEnd: (_) => setState(() => _draggingHabitId = null),
+          feedback: Opacity(
+            opacity: 0.7,
+            child: _buildCard(id, name, isChecked),
           ),
+          childWhenDragging: const SizedBox(width: 0),
+          child: _buildCard(id, name, isChecked),
         );
       },
+    );
+  }
+
+  Widget _buildCard(String id, String name, bool isChecked) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+      width: 140,
+      decoration: BoxDecoration(
+        color: isChecked ? Colors.green[300] : Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          if (isChecked)
+            BoxShadow(
+              color: Colors.green.withOpacity(0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+        ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: () async {
+          try {
+            await _toggleHabit(id);
+          } catch (e) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
+          }
+        },
+        child: AnimatedScale(
+          scale: isChecked ? 1.05 : 1.0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutBack,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 6),
+                AnimatedOpacity(
+                  duration: const Duration(milliseconds: 300),
+                  opacity: isChecked ? 1 : 0,
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -124,10 +162,7 @@ class _HabitListPageState extends State<HabitListPage> {
     });
   }
 
-  final List<Widget> _pages = [
-    const Placeholder(), // remplacé dynamiquement
-    const StatsPage(),
-  ];
+  final List<Widget> _pages = [const Placeholder(), const StatsPage()];
 
   @override
   Widget build(BuildContext context) {
@@ -142,47 +177,76 @@ class _HabitListPageState extends State<HabitListPage> {
           ),
         ],
       ),
-      body: _selectedIndex == 0
-          ? Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _controller,
-                          decoration: const InputDecoration(
-                            labelText: 'Nouvelle habitude',
+      body: Stack(
+        children: [
+          _selectedIndex == 0
+              ? Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _controller,
+                              decoration: const InputDecoration(
+                                labelText: 'Nouvelle habitude',
+                              ),
+                              onSubmitted: (_) => _addHabit(),
+                            ),
                           ),
-                          onSubmitted: (_) => _addHabit(),
-                        ),
+                          IconButton(
+                            icon: const Icon(Icons.add),
+                            onPressed: _addHabit,
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.add),
-                        onPressed: _addHabit,
-                      ),
-                    ],
+                    ),
+                    habits.isEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Text("Aucune habitude ajoutée"),
+                          )
+                        : SizedBox(
+                            height: 120,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: habits.length,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                              itemBuilder: (context, index) =>
+                                  _buildHabitCard(habits[index]),
+                            ),
+                          ),
+                  ],
+                )
+              : _pages[_selectedIndex],
+
+          // Zone Drop Poubelle
+          Positioned(
+            bottom: 16,
+            left: 16,
+            child: DragTarget<String>(
+              onWillAccept: (data) => true,
+              onAccept: (id) => _deleteHabit(id),
+              builder: (context, candidateData, rejectedData) {
+                final isHovering = candidateData.isNotEmpty;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: isHovering ? Colors.redAccent : Colors.grey[300],
+                    shape: BoxShape.circle,
                   ),
-                ),
-                habits.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text("Aucune habitude ajoutée"),
-                      )
-                    : SizedBox(
-                        height: 80, // 👈 fixe la hauteur des cartes
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: habits.length,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          itemBuilder: (context, index) =>
-                              _buildHabitCard(habits[index]),
-                        ),
-                      ),
-              ],
-            )
-          : _pages[_selectedIndex],
+                  child: const Icon(Icons.delete, color: Colors.white),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
@@ -192,5 +256,12 @@ class _HabitListPageState extends State<HabitListPage> {
         ],
       ),
     );
+  }
+
+  bool _isValidUuid(String id) {
+    final uuidRegex = RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
+    );
+    return uuidRegex.hasMatch(id);
   }
 }
