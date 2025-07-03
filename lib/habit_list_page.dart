@@ -87,24 +87,38 @@ void initState() {
       builder: (context, snapshot) {
         final isChecked = snapshot.data ?? false;
 
-        return LongPressDraggable<String>(
+        return Draggable<String>(
           data: id,
           onDragStarted: () => setState(() => _draggingHabitId = id),
           onDraggableCanceled: (_, __) =>
               setState(() => _draggingHabitId = null),
           onDragEnd: (_) => setState(() => _draggingHabitId = null),
-          feedback: Opacity(
-            opacity: 0.7,
-            child: _buildCard(id, name, isChecked),
+          feedback: Material(
+            color: Colors.transparent,
+            child: Opacity(
+              opacity: 0.7,
+              child: _buildCard(id, name, isChecked, isDragging: true),
+            ),
           ),
+
           childWhenDragging: const SizedBox(width: 0),
-          child: _buildCard(id, name, isChecked),
+          child: _buildCard(
+            id,
+            name,
+            isChecked,
+            isDragging: _draggingHabitId == id,
+          ),
         );
       },
     );
   }
 
-  Widget _buildCard(String id, String name, bool isChecked) {
+  Widget _buildCard(
+    String id,
+    String name,
+    bool isChecked, {
+    bool isDragging = false,
+  }) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
