@@ -19,11 +19,16 @@ class _HabitListPageState extends State<HabitListPage> {
   int _selectedIndex = 0;
   String? _draggingHabitId;
 
-  @override
+ @override
   void initState() {
-    super.initState();
-    _loadHabits();
+  super.initState();
+  if (supabase.auth.currentUser == null) {
+    Navigator.of(context).pushReplacementNamed('/');
+    return;
   }
+  _loadHabits();
+}
+
 
   Future<void> _loadHabits() async {
     final loaded = await SupabaseHelper.getHabits();
@@ -169,13 +174,24 @@ class _HabitListPageState extends State<HabitListPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Suivi d’habitudes'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.brightness_6),
-            tooltip: 'Changer thème',
-            onPressed: () => themeController.toggleTheme(),
-          ),
-        ],
+       actions: [
+        IconButton(
+          icon: const Icon(Icons.brightness_6),
+          tooltip: 'Changer thème',
+          onPressed: () => themeController.toggleTheme(),
+        ),
+        IconButton(
+          icon: const Icon(Icons.logout),
+          tooltip: 'Déconnexion',
+          onPressed: () async {
+            await supabase.auth.signOut();
+            if (context.mounted) {
+              Navigator.of(context).pushReplacementNamed('/');
+            }
+          },
+        ),
+      ],
+
       ),
       body: Stack(
         children: [

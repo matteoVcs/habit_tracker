@@ -21,14 +21,18 @@ class SupabaseHelper {
 
   // Récupération des habitudes
   static Future<List<Map<String, dynamic>>> getHabits() async {
-    final userId = supabase.auth.currentUser!.id;
+    final user = supabase.auth.currentUser;
+    if (user == null) return [];
+    final userId = user.id;
     final res = await supabase.from('habits').select().eq('user_id', userId);
     return List<Map<String, dynamic>>.from(res);
   }
 
   // Ajout d'une habitude
   static Future<void> addHabit(String name) async {
-    final userId = supabase.auth.currentUser!.id;
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+    final userId = user.id;
     await supabase.from('habits').insert({'name': name, 'user_id': userId});
   }
 
