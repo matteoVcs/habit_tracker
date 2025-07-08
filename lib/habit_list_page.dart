@@ -28,6 +28,13 @@ class _HabitListPageState extends State<HabitListPage> {
       if (supabase.auth.currentUser == null && mounted) {
         Navigator.of(context).pushReplacementNamed('/');
       } else {
+        // Initialise le service de notifications dès le démarrage
+        try {
+          await NotificationService().init();
+        } catch (e) {
+          debugPrint('Erreur lors de l\'initialisation des notifications: $e');
+        }
+        
         await _loadHabits();
         // Vérifie les rappels au démarrage de l'app
         await NotificationService().checkAndSendReminders();
@@ -133,7 +140,12 @@ class _HabitListPageState extends State<HabitListPage> {
     // Si l'habitude vient d'être validée, annule le rappel
     final isNowChecked = await SupabaseHelper.isHabitChecked(id, today);
     if (isNowChecked) {
-      await NotificationService().cancelHabitReminder(id);
+      try {
+        await NotificationService().cancelHabitReminder(id);
+      } catch (e) {
+        // Log l'erreur mais continue l'exécution
+        debugPrint('Erreur lors de l\'annulation du rappel: $e');
+      }
     }
 
     setState(() {});

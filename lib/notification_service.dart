@@ -148,6 +148,7 @@ class NotificationService {
 
   /// Annule le rappel d'une habitude (quand elle est validée)
   Future<void> cancelHabitReminder(String habitId) async {
+    if (!_initialized) await init();
     final notificationId = habitId.hashCode.abs() % 2147483647;
     await _flutterLocalNotificationsPlugin.cancel(notificationId);
   }
