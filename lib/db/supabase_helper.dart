@@ -27,6 +27,19 @@ class SupabaseHelper {
     return List<Map<String, dynamic>>.from(res);
   }
 
+  // Vérifie si une habitude avec ce nom existe déjà pour l'utilisateur
+  static Future<bool> habitNameExists(String name) async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return false;
+    final userId = user.id;
+    final res = await supabase
+        .from('habits')
+        .select()
+        .eq('user_id', userId)
+        .eq('name', name);
+    return (res as List).isNotEmpty;
+  }
+
   // Ajout d'une habitude
   static Future<void> addHabit(String name) async {
     final user = supabase.auth.currentUser;

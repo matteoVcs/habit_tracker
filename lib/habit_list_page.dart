@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'dart:io' show Platform;
 import 'db/supabase_helper.dart';
 import 'stats_page.dart';
 import 'style/theme_toggle_slider.dart';
 import 'login_page.dart';
-import 'notification_service.dart';
 import 'notification_service.dart';
 
 class HabitListPage extends StatefulWidget {
@@ -47,21 +45,80 @@ class _HabitListPageState extends State<HabitListPage> {
   Future<void> _addHabit() async {
     final name = _controller.text.trim();
     if (name.isNotEmpty) {
+      // Vérifie si une habitude avec ce nom existe déjà
+      final nameExists = await SupabaseHelper.habitNameExists(name);
+      if (nameExists) {
+        // Affiche un bandeau d'erreur qui se ferme automatiquement
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Une habitude avec ce nom existe déjà !',
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
+          );
+        }
+        return;
+      }
+
       await SupabaseHelper.addHabit(name);
-      
+
       // Récupère la nouvelle habitude pour obtenir son ID
       final habits = await SupabaseHelper.getHabits();
       final newHabit = habits.firstWhere((h) => h['name'] == name);
-      
+
       // Planifie un rappel pour cette habitude dans 24h
       await NotificationService().scheduleHabitReminder(
         habitId: newHabit['id'],
         habitName: name,
         createdDate: DateTime.now(),
       );
-      
+
       _controller.clear();
       await _loadHabits();
+
+      // Affiche un message de succès
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Habitude "$name" ajoutée avec succès !',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
     }
   }
 
@@ -72,13 +129,13 @@ class _HabitListPageState extends State<HabitListPage> {
 
   Future<void> _toggleHabit(String id) async {
     await SupabaseHelper.toggleCheck(id, today);
-    
+
     // Si l'habitude vient d'être validée, annule le rappel
     final isNowChecked = await SupabaseHelper.isHabitChecked(id, today);
     if (isNowChecked) {
       await NotificationService().cancelHabitReminder(id);
     }
-    
+
     setState(() {});
   }
 
@@ -142,14 +199,19 @@ class _HabitListPageState extends State<HabitListPage> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.notification_important, color: Colors.white),
+                      icon: const Icon(
+                        Icons.notification_important,
+                        color: Colors.white,
+                      ),
                       tooltip: 'Vérifier les rappels',
                       onPressed: () async {
                         await NotificationService().checkAndSendReminders();
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: const Text('Vérification des rappels terminée ! 🔔'),
+                              content: const Text(
+                                'Vérification des rappels terminée ! 🔔',
+                              ),
                               backgroundColor: theme.colorScheme.primary,
                               duration: const Duration(seconds: 2),
                             ),
