@@ -399,40 +399,65 @@ class _HabitListPageState extends State<HabitListPage> {
         // Zone de suppression (poubelle)
         if (_draggingHabitId != null)
           Positioned(
-            bottom: 20,
-            left: 20,
-            child: DragTarget<String>(
-              onWillAccept: (data) => true,
-              onAccept: (id) {
-                _deleteHabit(id);
-                setState(() => _draggingHabitId = null);
-              },
-              builder: (context, candidateData, rejectedData) {
-                final isHovering = candidateData.isNotEmpty;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: isHovering
-                        ? Colors.red
-                        : Colors.red.withOpacity(0.7),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.red.withOpacity(0.3),
-                        blurRadius: isHovering ? 12 : 8,
-                        offset: const Offset(0, 4),
+            bottom: 40,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: DragTarget<String>(
+                onWillAccept: (data) => true,
+                onAccept: (id) {
+                  _deleteHabit(id);
+                  setState(() => _draggingHabitId = null);
+                  // Affichage d'un message de confirmation
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(
+                            Icons.check_circle_outline,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Habitude supprimée avec succès !'),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.delete_outline,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                );
-              },
+                      backgroundColor: Colors.orange,
+                      duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      margin: const EdgeInsets.all(16),
+                    ),
+                  );
+                },
+                builder: (context, candidateData, rejectedData) {
+                  final isHovering = candidateData.isNotEmpty;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    width: isHovering ? 120 : 80,
+                    height: isHovering ? 120 : 80,
+                    decoration: BoxDecoration(
+                      color: isHovering
+                          ? Colors.red.shade600
+                          : Colors.red.withOpacity(0.8),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.red.withOpacity(0.4),
+                          blurRadius: isHovering ? 20 : 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.delete_outline,
+                      color: Colors.white,
+                      size: isHovering ? 40 : 32,
+                    ),
+                  );
+                },
+              ),
             ),
           ),
       ],
@@ -454,7 +479,7 @@ class _HabitListPageState extends State<HabitListPage> {
       builder: (context, snapshot) {
         final isChecked = snapshot.data ?? false;
 
-        return Draggable<String>(
+        return LongPressDraggable<String>(
           data: id,
           onDragStarted: () => setState(() => _draggingHabitId = id),
           onDraggableCanceled: (_, __) =>
@@ -462,16 +487,19 @@ class _HabitListPageState extends State<HabitListPage> {
           onDragEnd: (_) => setState(() => _draggingHabitId = null),
           feedback: Material(
             color: Colors.transparent,
-            child: SizedBox(
-              width: 300, // Largeur fixe pour le feedback
-              height: 70, // Hauteur fixe pour le feedback
-              child: Opacity(
-                opacity: 0.8,
-                child: _buildCardContent(
-                  name,
-                  isChecked,
-                  theme,
-                  isDragging: true,
+            child: Transform.scale(
+              scale: 1.1,
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.8,
+                height: 70,
+                child: Opacity(
+                  opacity: 0.9,
+                  child: _buildCardContent(
+                    name,
+                    isChecked,
+                    theme,
+                    isDragging: true,
+                  ),
                 ),
               ),
             ),
